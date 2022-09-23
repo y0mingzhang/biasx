@@ -1,0 +1,9 @@
+output_dir: outputs/debug
+model_name: t5-small
+data_config:
+  data_dir: data/
+  batch_size: 16
+train_config:
+  train_steps: 2000
+  grad_accumulation_steps: 1
+  lr: 1e-4
