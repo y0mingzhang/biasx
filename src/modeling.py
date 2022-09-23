@@ -1,4 +1,6 @@
 import torch
+import pandas as pd
+from os.path import join
 from typing import Optional
 from omegaconf import DictConfig
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -6,19 +8,22 @@ from tqdm.auto import tqdm
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from datasets import Dataset
-from data import ADDED_TOKENS
+from data import ADDED_TOKENS, SPLIT, extract_fields_from_generation
 from utils import get_device, to_device, load_last_model, save_model
+from metrics import get_metrics
 
 
 def initialize_model_and_tokenizer(
     conf: DictConfig,
 ) -> tuple[AutoModelForSeq2SeqLM, AutoTokenizer]:
     model = AutoModelForSeq2SeqLM.from_pretrained(conf.model_name)
-    tokenizer = AutoTokenizer.from_pretrained(conf.model_name, use_fast=False)
+    tokenizer = AutoTokenizer.from_pretrained(
+        conf.model_name, use_fast=False, model_max_length=512
+    )
 
     # adding custom tokens to vocab
     new_tokens = set(ADDED_TOKENS) - set(tokenizer.get_vocab().keys())
-    tokenizer.add_tokens(list(new_tokens))
+    tokenizer.add_tokens(sorted(new_tokens))
     model.resize_token_embeddings(len(tokenizer))
 
     return model, tokenizer
@@ -28,10 +33,10 @@ def train(
     conf: DictConfig,
     model: AutoModelForSeq2SeqLM,
     tokenizer: AutoTokenizer,
+    train_df: pd.DataFrame,
     train_dl: DataLoader,
-    train_data: Dataset,
-    val_dl: DataLoader,
-    val_data: Dataset,
+    dev_df: pd.DataFrame,
+    dev_dl: DataLoader,
 ) -> None:
     train_conf = conf.train_config
     device = get_device()
@@ -43,7 +48,7 @@ def train(
     model.train()
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=train_conf.lr)
-    do_validation = val_dl and train_conf.get("eval_every", -1) > 0
+    do_validation = dev_dl and train_conf.get("eval_every", -1) > 0
 
     with tqdm(total=train_conf.train_steps, desc="training..") as pbar:
         while step < train_conf.train_steps:
@@ -66,10 +71,11 @@ def train(
                 optimizer.zero_grad()
 
             if do_validation and step % train_conf.eval_every == 0:
-                evaluate(conf, model, tokenizer, "val", val_dl, val_data, step=step)
+                evaluate(conf, model, tokenizer, "dev", dev_df, dev_dl, step=step)
                 model.train()
 
             pbar.update(1)
+            pbar.set_postfix(loss=output.loss.item())
     save_model(conf.output_dir, model, step)
 
 
@@ -78,9 +84,9 @@ def evaluate(
     model: AutoModelForSeq2SeqLM,
     tokenizer: AutoTokenizer,
     eval_mode: str,
+    eval_df: pd.DataFrame,
     eval_dl: DataLoader,
-    eval_data: Dataset,
-    step: Optional[int] = None,
+    step: Optional[int] = -1,
     eval_prefix: Optional[str] = None,
 ):
     if eval_mode == "test":
@@ -95,14 +101,28 @@ def evaluate(
     model.to(device)
 
     generated = []
-    targets = []
 
     with torch.no_grad():
         for batch in tqdm(eval_dl):
             batch = to_device(batch, device)
             outputs = model.generate(
-                batch["input_ids"], attention_mask=batch["attention_mask"]
+                batch["input_ids"],
+                attention_mask=batch["attention_mask"],
+                max_new_tokens=128,
             )
 
             decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
             generated.extend(decoded)
+
+    eval_df["generation"] = generated
+    eval_df = pd.concat(
+        (eval_df, eval_df["generation"].apply(extract_fields_from_generation)), axis=1
+    )
+    filename = f"dev-{step}-df.jsonl" if eval_mode == "dev" else "test-df.jsonl"
+    eval_df.to_json(join(conf.output_dir, filename), lines=True, orient="records")
+
+    eval_metrics = get_metrics(eval_df)
+    filename = (
+        f"dev-{step}-metrics.jsonl" if eval_mode == "dev" else "test-metrics.jsonl"
+    )
+    eval_metrics.to_json(join(conf.output_dir, filename))

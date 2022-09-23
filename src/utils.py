@@ -47,3 +47,7 @@ def save_model(output_dir, model, step):
     os.makedirs(ckpt_dir, exist_ok=True)
     ckpt = join(ckpt_dir, f"{step}.pt")
     torch.save(model.state_dict(), ckpt)
+
+
+def num_workers() -> int:
+    return min(os.cpu_count(), 16)

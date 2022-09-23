@@ -1,10 +1,10 @@
-output_dir: outputs/debug
+output_dir: outputs/t5-large
 model_name: t5-large
 data_config:
   data_dir: data/
   batch_size: 4
 train_config:
-  train_steps: 200
+  train_steps: 10000
   grad_accumulation_steps: 4
   lr: 1e-4
-  eval_every: 100
+  eval_every: 2500
