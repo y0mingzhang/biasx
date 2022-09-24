@@ -139,6 +139,9 @@ def prepare_data(
             # key, and generating any among ref groups/stereotypes is acceptable
             df = df.groupby("post").apply(aggregate_post_group).reset_index()
 
+        if split == "dev" and data_conf.get('dev_size') > 0:
+            df = df.sample(data_conf.dev_size)
+
         dataframes[split] = df
 
         print(f"{split} dataset:")

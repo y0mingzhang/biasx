@@ -5,6 +5,7 @@ data_config:
   data_dir: data/SBIC.v2-min
   batch_size: 4
   subsample_common_stereotypes: False
+  dev_size: 1000
 train_config:
   train_steps: 200
   grad_accumulation_steps: 4
