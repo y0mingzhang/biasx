@@ -1,0 +1,14 @@
+output_dir: outputs/t5-v1_1/base
+model_name: google/t5-v1_1-base
+data_config:
+  subsample_common_stereotypes: True
+  data_dir: data/SBIC.v2
+  batch_size: 16
+train_config:
+  train_steps: 8000
+  grad_accumulation_steps: 1
+  lr: 1e-4
+  eval_every: 800
+generate_config:
+  do_sample: True
+  temperature: 0.3
