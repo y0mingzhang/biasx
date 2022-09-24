@@ -7,9 +7,8 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from tqdm.auto import tqdm
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
-from datasets import Dataset
 from data import ADDED_TOKENS, SPLIT, extract_fields_from_generation
-from utils import get_device, to_device, load_last_model, save_model
+from utils import get_device, to_device, load_last_model, load_best_model, save_model
 from metrics import get_metrics
 
 
@@ -83,18 +82,25 @@ def evaluate(
     conf: DictConfig,
     model: AutoModelForSeq2SeqLM,
     tokenizer: AutoTokenizer,
-    eval_mode: str,
+    eval_mode: SPLIT,
     eval_df: pd.DataFrame,
     eval_dl: DataLoader,
     step: Optional[int] = -1,
     eval_prefix: Optional[str] = None,
 ):
+
+    eval_config = conf.eval_config
+    generate_config = conf.generate_config
     if eval_mode == "test":
         try:
-            model = load_best_model(conf.output_dir, model)
+            model = load_best_model(
+                conf.output_dir, model, eval_config.monitor, eval_config.maximize
+            )
         except Exception:
-            print("cannot find best model, loading last saved model for testing")
+            print("loading last saved model for testing")
             model, _ = load_last_model(conf.output_dir, model)
+    else:
+        save_model(conf.output_dir, model, step)
 
     model.eval()
     device = get_device()
@@ -103,12 +109,13 @@ def evaluate(
     generated = []
 
     with torch.no_grad():
-        for batch in tqdm(eval_dl):
+        for batch in tqdm(eval_dl, desc=f"running {eval_mode}..."):
             batch = to_device(batch, device)
             outputs = model.generate(
                 batch["input_ids"],
                 attention_mask=batch["attention_mask"],
                 max_new_tokens=128,
+                **generate_config,
             )
 
             decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
@@ -122,7 +129,5 @@ def evaluate(
     eval_df.to_json(join(conf.output_dir, filename), lines=True, orient="records")
 
     eval_metrics = get_metrics(eval_df)
-    filename = (
-        f"dev-{step}-metrics.jsonl" if eval_mode == "dev" else "test-metrics.jsonl"
-    )
+    filename = f"dev-{step}-metrics.json" if eval_mode == "dev" else "test-metrics.json"
     eval_metrics.to_json(join(conf.output_dir, filename))

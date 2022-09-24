@@ -1,4 +1,4 @@
-import random, torch, os, glob
+import random, torch, os, glob, json
 import numpy as np
 from os.path import join, basename
 
@@ -23,7 +23,9 @@ def to_device(batch: dict[str, torch.Tensor], device: str) -> dict[str, torch.Te
     return {k: v.to(device) for k, v in batch.items()}
 
 
-def load_last_model(output_dir, model):
+def load_last_model(
+    output_dir: str, model: torch.nn.Module
+) -> tuple[torch.nn.Module, int]:
     # load latest model
     ckpt_dir = join(output_dir, "ckpt")
     if not os.path.exists(ckpt_dir):
@@ -41,7 +43,27 @@ def load_last_model(output_dir, model):
     return model, last_step
 
 
-def save_model(output_dir, model, step):
+def load_best_model(
+    output_dir: str, model: torch.nn.Module, metric: str, maximize: bool = True
+) -> torch.nn.Module:
+    ckpt_dir = join(output_dir, "ckpt")
+    metric_to_step = {}
+    for metric_file in glob.glob(join(output_dir, "dev*metrics.json")):
+        step = int(metric_file.split("-")[1])
+        try:
+            with open(metric_file) as f:
+                metrics = json.load(f)
+                metric_to_step[metrics[metric]] = step
+        except:
+            pass
+
+    comparator = max if maximize else min
+    step = comparator(metric_to_step.items())[1]
+    model.load_state_dict(torch.load(join(ckpt_dir, f"{step}.pt")))
+    return model
+
+
+def save_model(output_dir: str, model: torch.nn.Module, step: int) -> None:
     # save model
     ckpt_dir = join(output_dir, "ckpt")
     os.makedirs(ckpt_dir, exist_ok=True)

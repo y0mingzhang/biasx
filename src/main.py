@@ -9,7 +9,8 @@ from data import prepare_data
 
 def main():
     seed_everything(42)
-    conf = OmegaConf.load(sys.argv[1])
+    base_conf = OmegaConf.load("configs/base.yaml")
+    conf = OmegaConf.merge(base_conf, OmegaConf.load(sys.argv[1]))
 
     # dump config to output_dir
     os.makedirs(conf.output_dir, exist_ok=True)
@@ -30,6 +31,7 @@ def main():
         dataloaders["dev"],
     )
     evaluate(conf, model, tokenizer, "test", dataframes["test"], dataloaders["test"])
+    print("Done!")
 
 
 if __name__ == "__main__":

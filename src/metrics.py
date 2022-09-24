@@ -1,6 +1,18 @@
-import pandas as pd
 import torchmetrics
+import pandas as pd
 from sklearn.metrics import f1_score
+from data import NA_TOKEN
+
+METRICS = [
+    "offensive-accuracy",
+    "offensive-F1",
+    "minority-group-exact-match",
+    "minority-group-BLEU-1",
+    "minority-group-ROUGE-L",
+    "stereotype-exact-match",
+    "stereotype-BLEU-1",
+    "stereotype-ROUGE-L",
+]
 
 BLEU_1_metric = torchmetrics.BLEUScore(n_gram=1)
 ROUGE_L_metric = torchmetrics.text.ROUGEScore(rouge_keys="rougeL")
@@ -15,6 +27,7 @@ def ROUGE_L(preds: list[str], targets: list[list[str]]) -> float:
 
 
 def get_metrics(eval_df: pd.DataFrame) -> pd.Series:
+    # typical metrics for classification & generation performance
     labels = eval_df["offensiveYN"].astype(int)
     preds = eval_df["offensivePrediction"].astype(int)
 
@@ -44,5 +57,17 @@ def get_metrics(eval_df: pd.DataFrame) -> pd.Series:
             ).mean(),
             "stereotype-BLEU-1": BLEU_1(generated_stereotype, reference_stereotypes),
             "stereotype-ROUGE-L": ROUGE_L(generated_stereotype, reference_stereotypes),
+            "distinct-minority-groups": len(
+                set(g for gs in reference_minority_groups for g in gs if g != NA_TOKEN)
+            ),
+            "distinct-minority-groups-generated": len(
+                set(g for g in generated_minority_group if g != NA_TOKEN)
+            ),
+            "distinct-stereotypes": len(
+                set(s for ss in reference_stereotypes for s in ss if s != NA_TOKEN)
+            ),
+            "distinct-stereotypes-generated": len(
+                set(s for s in generated_stereotype if s != NA_TOKEN)
+            ),
         }
     )

@@ -1,7 +1,7 @@
 output_dir: outputs/t5-large
 model_name: t5-large
 data_config:
-  data_dir: data/
+  data_dir: data/SBIC.v2
   batch_size: 4
 train_config:
   train_steps: 10000

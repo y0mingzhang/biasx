@@ -1,4 +1,5 @@
-import functools, re
+import functools, re, itertools, json
+import numpy as np
 from typing import Any, Literal
 import pandas as pd
 from os.path import join
@@ -31,7 +32,11 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def process_example(example: dict) -> dict:
-    # getting generation target for examples
+    if "targetMinority" not in example:
+        # eval example does not have targets
+        return {"text": example["post"], "target": ""}
+
+    # getting generation target for training examples
     offensive = example["offensiveYN"] == 1.0
     if offensive:
         target = " ".join(
@@ -39,11 +44,11 @@ def process_example(example: dict) -> dict:
                 OFFENSIVE_TOKEN,
                 GROUP_TOKEN,
                 NA_TOKEN
-                if example["targetMinority"] is None
+                if example.get("targetMinority") is None
                 else example["targetMinority"],
                 STEREOTYPE_TOKEN,
                 NA_TOKEN
-                if example["targetStereotype"] is None
+                if example.get("targetStereotype") is None
                 else example["targetStereotype"],
             ]
         )
@@ -58,6 +63,53 @@ def tokenize_func(tokenizer: AutoTokenizer, example: dict) -> dict:
     return tokenized
 
 
+def aggregate_post_group(group: pd.Series) -> pd.Series:
+    # is the post offensive under any group?
+    offensive = any(group["offensiveYN"])
+    ref_groups = []
+    ref_stereotypes = []
+
+    for _, row in group.iterrows():
+        if row["offensiveYN"]:
+            if isinstance(row["targetMinority"], str):
+                ref_groups.append(row["targetMinority"])
+            if isinstance(row["targetStereotype"], str):
+                ref_stereotypes.append(row["targetStereotype"])
+
+    if ref_groups:
+        ref_groups = sorted(set(ref_groups))
+    else:
+        ref_groups = [NA_TOKEN]
+
+    if ref_stereotypes:
+        ref_stereotypes = sorted(set(ref_stereotypes))
+    else:
+        ref_stereotypes = [NA_TOKEN]
+
+    return pd.Series(
+        {
+            "offensiveYN": offensive,
+            "referenceMinorityGroups": ref_groups,
+            "referenceStereotypes": ref_stereotypes,
+        }
+    )
+
+
+def summarize_dataset(df: pd.DataFrame) -> dict:
+    if "targetMinority" in df.columns:
+        groups = set(df["targetMinority"])
+        stereotypes = set(df["targetStereotype"])
+    else:
+        groups = set(itertools.chain(*df["referenceMinorityGroups"]))
+        stereotypes = set(itertools.chain(*df["referenceStereotypes"]))
+    return {
+        "examples": len(df),
+        "label distribution": df.value_counts("offensiveYN", normalize=True).to_dict(),
+        "distinct groups": len(set(groups)),
+        "distinct stereotypes": len(set(stereotypes)),
+    }
+
+
 def prepare_data(
     data_conf: DictConfig, tokenizer: AutoTokenizer
 ) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
@@ -68,38 +120,29 @@ def prepare_data(
     # for each post, get all reference groups/stereotypes for BLEU/ROUGE/WMD evaluation
     for split in splits:
         df = filter_dataframe(
-            pd.read_csv(
-                join("/home/yimingz0/src/sbf-modeling/data", "SBIC.v2", f"{split}.csv")
-            )
+            pd.read_csv(join(data_conf.data_dir, f"{split}.csv"))
         ).drop_duplicates(subset=["post", "targetMinority", "targetStereotype"])
 
-        reference_minority_groups = (
-            df[(df["offensiveYN"] == 1.0) & (df["targetMinority"].notna())]
-            .groupby("post")
-            .agg(referenceMinorityGroups=("targetMinority", "unique"))
-        )
+        if split == "train":
+            if data_conf.subsample_common_stereotypes:
+                stereotype_counts = df.value_counts("targetStereotype")
+                inclusion_probs = 1 / np.sqrt(
+                    df["targetStereotype"].apply(
+                        lambda s: stereotype_counts[s] if s in stereotype_counts else 1
+                    )
+                )
+                included = np.random.uniform(size=len(df)) <= inclusion_probs
+                df = df[included]
 
-        reference_stereotypes = (
-            df[(df["offensiveYN"] == 1.0) & (df["targetStereotype"].notna())]
-            .groupby("post")
-            .agg(referenceStereotypes=("targetStereotype", "unique"))
-        )
-
-        df = df.merge(reference_minority_groups, how="left", on="post").merge(
-            reference_stereotypes, how="left", on="post"
-        )
-
-        isna = df["referenceMinorityGroups"].isna()
-        df.loc[isna, "referenceMinorityGroups"] = pd.Series(
-            [[NA_TOKEN]] * isna.sum()
-        ).values
-
-        isna = df["referenceStereotypes"].isna()
-        df.loc[isna, "referenceStereotypes"] = pd.Series(
-            [[NA_TOKEN]] * isna.sum()
-        ).values
+        if split in ("dev", "test"):
+            # when evaluating, we "aggregate" the data, so that post becomes a unique
+            # key, and generating any among ref groups/stereotypes is acceptable
+            df = df.groupby("post").apply(aggregate_post_group).reset_index()
 
         dataframes[split] = df
+
+        print(f"{split} dataset:")
+        print(json.dumps(summarize_dataset(df), indent=4))
 
     dataset_raw = DatasetDict(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
