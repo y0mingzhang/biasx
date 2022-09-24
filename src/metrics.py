@@ -1,4 +1,5 @@
 import torchmetrics
+from torchmetrics.text.rouge import ROUGEScore
 import pandas as pd
 from sklearn.metrics import f1_score
 from data import NA_TOKEN
@@ -15,7 +16,7 @@ METRICS = [
 ]
 
 BLEU_1_metric = torchmetrics.BLEUScore(n_gram=1)
-ROUGE_L_metric = torchmetrics.text.ROUGEScore(rouge_keys="rougeL")
+ROUGE_L_metric = ROUGEScore(rouge_keys="rougeL")
 
 
 def BLEU_1(preds: list[str], targets: list[list[str]]) -> float:
