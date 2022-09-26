@@ -7,12 +7,13 @@ data_config:
   subsample_common_stereotypes: False
   dev_size: 1000
 train_config:
+  optimizer: adamw
   train_steps: 200
   grad_accumulation_steps: 4
   lr: 1e-4
   eval_every: 100
 eval_config:
-  monitor: stereotype-exact-match
+  monitor: offensive-F1
   maximize: True
 generate_config:
   do_sample: False

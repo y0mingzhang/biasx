@@ -8,6 +8,7 @@ dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
   - abseil-cpp=20211102.0=hd4dd3e8_0
+  - aiohttp=3.8.1=py310h5764c6d_1
   - aiosignal=1.2.0=pyhd3eb1b0_0
   - arrow-cpp=8.0.0=py310h3098874_0
   - async-timeout=4.0.1=pyhd3eb1b0_0
@@ -16,15 +17,19 @@ dependencies:
   - aws-c-event-stream=0.1.6=h2531618_5
   - aws-checksums=0.1.9=he6710b0_0
   - aws-sdk-cpp=1.8.185=hce553d0_0
+  - black=22.6.0=py310h06a4308_0
   - blas=1.0=mkl
   - boost-cpp=1.73.0=h7f8727e_12
   - brotli=1.0.9=h5eee18b_7
   - brotli-bin=1.0.9=h5eee18b_7
+  - brotlipy=0.7.0=py310h5764c6d_1004
   - bzip2=1.0.8=h7b6447c_0
   - c-ares=1.18.1=h7f8727e_0
-  - ca-certificates=2022.9.14=ha878542_0
-  - certifi=2022.9.14=pyhd8ed1ab_0
+  - ca-certificates=2022.07.19=h06a4308_0
+  - certifi=2022.9.14=py310h06a4308_0
+  - cffi=1.15.1=py310h74dc2b5_0
   - charset-normalizer=2.0.4=pyhd3eb1b0_0
+  - colorama=0.4.5=pyhd8ed1ab_0
   - cudatoolkit=11.3.1=h2bc3f7f_2
   - dataclasses=0.8=pyh6d0b6a4_7
   - datasets=2.5.1=py_0
@@ -41,6 +46,7 @@ dependencies:
   - huggingface_hub=0.9.1=py_0
   - icu=58.2=he6710b0_3
   - idna=3.3=pyhd3eb1b0_0
+  - importlib-metadata=4.11.3=py310hff52083_1
   - importlib_metadata=4.11.3=hd3eb1b0_0
   - intel-openmp=2021.4.0=h06a4308_3561
   - joblib=1.1.0=pyhd3eb1b0_0
@@ -83,83 +89,81 @@ dependencies:
   - libwebp-base=1.2.2=h7f8727e_0
   - lz4-c=1.9.3=h295c915_1
   - mkl=2021.4.0=h06a4308_640
+  - mkl-service=2.4.0=py310ha2c4b55_0
   - mkl_fft=1.3.1=py310hd6ae3a3_0
   - mkl_random=1.2.2=py310h00e6091_0
+  - multiprocess=0.70.12.2=py310h5764c6d_2
+  - mypy_extensions=0.4.3=py310h06a4308_0
   - ncurses=6.3=h5eee18b_3
   - nettle=3.7.3=hbbd107a_1
+  - numpy=1.23.1=py310h1794996_0
   - numpy-base=1.23.1=py310hcba007f_0
   - openh264=2.1.1=h4ff587b_0
   - openssl=1.1.1q=h7f8727e_0
   - orc=1.7.4=h07ed6aa_0
   - packaging=21.3=pyhd3eb1b0_0
+  - pathspec=0.9.0=py310h06a4308_0
+  - platformdirs=2.5.2=py310h06a4308_0
+  - protobuf=3.20.1=py310hd8f1fbe_0
+  - pyarrow=8.0.0=py310h468efa6_0
   - pycparser=2.21=pyhd3eb1b0_0
   - pyopenssl=22.0.0=pyhd3eb1b0_0
+  - pyparsing=3.0.9=pyhd8ed1ab_0
+  - pysocks=1.7.1=pyha2e5f31_6
   - python=3.10.4=h12debd9_0
   - python-dateutil=2.8.2=pyhd3eb1b0_0
   - python-xxhash=2.0.2=py310h7f8727e_0
   - python_abi=3.10=2_cp310
   - pytorch=1.12.1=py3.10_cuda11.3_cudnn8.3.2_0
   - pytorch-mutex=1.0=cuda
+  - pyyaml=6.0=py310h5764c6d_4
   - re2=2022.04.01=h295c915_0
   - readline=8.1.2=h7f8727e_1
+  - requests=2.28.1=pyhd8ed1ab_1
   - sacremoses=master=py_0
   - six=1.16.0=pyhd3eb1b0_1
   - snappy=1.1.9=h295c915_0
   - sqlite=3.39.2=h5082296_0
   - threadpoolctl=3.1.0=pyh8a188c0_0
   - tk=8.6.12=h1ccaba5_0
+  - tokenizers=0.11.4=py310h3dcd8bd_1
+  - tomli=2.0.1=py310h06a4308_0
   - torchmetrics=0.9.3=pyhd8ed1ab_0
   - transformers=4.22.1=py_0
+  - typing-extensions=4.3.0=py310h06a4308_0
   - typing_extensions=4.3.0=py310h06a4308_0
   - tzdata=2022c=h04d1e81_0
+  - urllib3=1.26.11=pyhd8ed1ab_0
   - utf8proc=2.6.1=h27cfd23_0
   - wheel=0.37.1=pyhd3eb1b0_0
+  - xxhash=0.8.0=h7f98852_3
   - xz=5.2.5=h7f8727e_1
   - yaml=0.2.5=h7b6447c_0
   - zlib=1.2.12=h5eee18b_3
   - zstd=1.5.2=ha4553b6_0
   - pip:
-    - aiohttp==3.8.1
     - antlr4-python3-runtime==4.9.3
     - bottleneck==1.3.5
-    - brotlipy==0.7.0
-    - cffi==1.15.1
     - click==8.0.4
     - cryptography==37.0.1
     - frozenlist==1.2.0
     - fsspec==2022.7.1
-    - importlib-metadata==4.11.3
-    - mkl-fft==1.3.1
-    - mkl-random==1.2.2
-    - mkl-service==2.4.0
     - multidict==5.2.0
-    - multiprocess==0.70.12.2
+    - nltk==3.7
     - numexpr==2.8.3
-    - numpy==1.23.1
     - omegaconf==2.2.3
     - pandas==1.4.4
     - pillow==9.2.0
     - pip==22.1.2
-    - protobuf==3.20.1
-    - pyarrow==8.0.0
-    - pyparsing==3.0.9
-    - pysocks==1.7.1
     - pytz==2022.1
-    - pyyaml==6.0
     - regex==2022.7.9
-    - requests==2.28.1
     - scikit-learn==1.1.1
     - scipy==1.8.1
     - sentencepiece==0.1.97
     - setuptools==63.4.1
-    - tokenizers==0.11.4
-    - torch==1.12.1
     - torchaudio==0.12.1
     - torchvision==0.13.1
     - tqdm==4.64.0
-    - typing-extensions==4.3.0
-    - urllib3==1.26.11
-    - xxhash==2.0.2
     - yarl==1.8.1
     - zipp==3.8.0
 

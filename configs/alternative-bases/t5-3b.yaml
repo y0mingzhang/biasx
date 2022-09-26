@@ -1,12 +1,12 @@
-output_dir: outputs/t5-v1_1/xl-bs=1
-model_name: google/t5-v1_1-xl
+output_dir: outputs/t5-3b-bs=1-lower-lr
+model_name: t5-3b
 data_config:
   subsample_common_stereotypes: True
   data_dir: data/SBIC.v2
   batch_size: 2
 train_config:
   optimizer: adafactor
-  train_steps: 16000
+  train_steps: 8000
   grad_accumulation_steps: 64
-  lr: 5e-4
-  eval_every: 640
+  lr: 2e-4
+  eval_every: 320

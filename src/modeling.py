@@ -3,7 +3,7 @@ import pandas as pd
 from os.path import join
 from typing import Optional
 from omegaconf import DictConfig
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, Adafactor
 from tqdm.auto import tqdm
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -46,7 +46,11 @@ def train(
     model, step = load_last_model(conf.output_dir, model)
     model.train()
     model.to(device)
-    optimizer = AdamW(model.parameters(), lr=train_conf.lr)
+
+    if train_conf.optimizer == "adamw":
+        optimizer = AdamW(model.parameters(), lr=train_conf.lr)
+    elif train_conf.optimizer == "adafactor":
+        optimizer = Adafactor(model.parameters(), lr=train_conf.lr, scale_parameter=False, relative_step=False)
     do_validation = dev_dl and train_conf.get("eval_every", -1) > 0
 
     with tqdm(total=train_conf.train_steps, desc="training..") as pbar:

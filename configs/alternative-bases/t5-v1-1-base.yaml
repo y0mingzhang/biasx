@@ -5,10 +5,7 @@ data_config:
   data_dir: data/SBIC.v2
   batch_size: 16
 train_config:
-  train_steps: 8000
+  train_steps: 4000
   grad_accumulation_steps: 1
   lr: 1e-4
-  eval_every: 800
-generate_config:
-  do_sample: True
-  temperature: 0.3
+  eval_every: 400
