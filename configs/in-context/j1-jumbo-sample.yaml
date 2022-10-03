@@ -1,0 +1,12 @@
+output_dir: outputs/in-context/j1-jumbo-sample
+api_key_file: /home/yimingz0/.ai23_api_key
+train_samples: 16
+train_seed: 43
+test_samples: 50
+test_seed: 44
+data_config:
+  data_dir: data/SBIC.v2
+  subsample_common_stereotypes: True
+generate_config:
+  model: j1-jumbo
+  temperature: 0.3

@@ -50,7 +50,12 @@ def train(
     if train_conf.optimizer == "adamw":
         optimizer = AdamW(model.parameters(), lr=train_conf.lr)
     elif train_conf.optimizer == "adafactor":
-        optimizer = Adafactor(model.parameters(), lr=train_conf.lr, scale_parameter=False, relative_step=False)
+        optimizer = Adafactor(
+            model.parameters(),
+            lr=train_conf.lr,
+            scale_parameter=False,
+            relative_step=False,
+        )
     do_validation = dev_dl and train_conf.get("eval_every", -1) > 0
 
     with tqdm(total=train_conf.train_steps, desc="training..") as pbar:

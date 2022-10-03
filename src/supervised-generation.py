@@ -9,7 +9,7 @@ from data import prepare_data
 
 def main():
     seed_everything(42)
-    base_conf = OmegaConf.load("configs/base.yaml")
+    base_conf = OmegaConf.load("configs/supervised/base.yaml")
     conf = OmegaConf.merge(base_conf, OmegaConf.load(sys.argv[1]))
 
     # dump config to output_dir

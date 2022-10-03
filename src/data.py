@@ -110,10 +110,7 @@ def summarize_dataset(df: pd.DataFrame) -> dict:
     }
 
 
-def prepare_data(
-    data_conf: DictConfig, tokenizer: AutoTokenizer
-) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
-    disable_progress_bar()  # datasets progbars kind of annoying
+def prepare_dataframes(data_conf: DictConfig) -> dict[SPLIT, pd.DataFrame]:
     splits = ["train", "dev", "test"]
     dataframes = {}
 
@@ -139,7 +136,7 @@ def prepare_data(
             # key, and generating any among ref groups/stereotypes is acceptable
             df = df.groupby("post").apply(aggregate_post_group).reset_index()
 
-        if split == "dev" and data_conf.get("dev_size") > 0:
+        if split == "dev" and data_conf.get("dev_size", -1) > 0:
             df = df.sample(data_conf.dev_size)
 
         dataframes[split] = df
@@ -147,6 +144,15 @@ def prepare_data(
         print(f"{split} dataset:")
         print(json.dumps(summarize_dataset(df), indent=4))
 
+    return dataframes
+
+
+def prepare_data(
+    data_conf: DictConfig, tokenizer: AutoTokenizer
+) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
+    disable_progress_bar()  # datasets progbars kind of annoying
+    splits = ["train", "dev", "test"]
+    dataframes = prepare_dataframes(data_conf)
     dataset_raw = DatasetDict(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
     )
