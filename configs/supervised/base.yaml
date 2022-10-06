@@ -1,5 +1,5 @@
 # base config (defines defaults for experiment config)
-output_dir: outputs/debug
+output_dir: outputs/supervised/debug
 model_name: t5-small
 data_config:
   data_dir: data/SBIC.v2-min

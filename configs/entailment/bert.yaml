@@ -1,0 +1,5 @@
+output_dir: outputs/entailment/bert
+model_name: bert-base-uncased
+data_config:
+  data_dir: data/SBIC.v2
+  batch_size: 8

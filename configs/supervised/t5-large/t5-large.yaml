@@ -1,9 +1,11 @@
-output_dir: outputs/t5-large/8k
+output_dir: outputs/supervised/t5-large/8k
 model_name: t5-large
 data_config:
   subsample_common_stereotypes: True
-  data_dir: data/SBIC.v2
+  data_dir: data/SBIC+implHate
   batch_size: 8
+  additional_test:
+    - test-implHate
 train_config:
   train_steps: 4000
   grad_accumulation_steps: 2

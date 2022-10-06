@@ -3,13 +3,13 @@ from os.path import join
 from omegaconf import OmegaConf
 
 from utils import seed_everything
-from modeling import initialize_model_and_tokenizer, train, evaluate
-from data import prepare_data
+from modeling import initialize_entailment_classifier_and_tokenizer, train, evaluate
+from data import prepare_data_entailment_classifier
 
 
 def main():
     seed_everything(42)
-    base_conf = OmegaConf.load("configs/supervised/base.yaml")
+    base_conf = OmegaConf.load("configs/entailment/base.yaml")
     conf = OmegaConf.merge(base_conf, OmegaConf.load(sys.argv[1]))
 
     # dump config to output_dir
@@ -17,8 +17,10 @@ def main():
     with open(join(conf.output_dir, "config.yaml"), "w") as f:
         OmegaConf.save(config=conf, f=f)
 
-    model, tokenizer = initialize_model_and_tokenizer(conf)
-    dataframes, dataloaders = prepare_data(conf.data_config, tokenizer)
+    model, tokenizer = initialize_entailment_classifier_and_tokenizer(conf)
+    dataframes, dataloaders = prepare_data_entailment_classifier(
+        conf.data_config, tokenizer
+    )
 
     # run training and evaluation on SBIC
     train(
@@ -31,17 +33,6 @@ def main():
         dataloaders["dev"],
     )
     evaluate(conf, model, tokenizer, "test", dataframes["test"], dataloaders["test"])
-    for split in conf["data_config"]["additional_test"]:
-        evaluate(
-            conf,
-            model,
-            tokenizer,
-            "test",
-            dataframes[split],
-            dataloaders[split],
-            eval_prefix=split,
-        )
-
     print("Done!")
 
 

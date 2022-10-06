@@ -1,14 +1,16 @@
-output_dir: outputs/debug
+output_dir: outputs/supervised/debug
 model_name: t5-large
 data_config:
-  data_dir: data/SBIC.v2
+  data_dir: data/SBIC+implHate-min
   batch_size: 4
-  subsample_common_stereotypes: True
+  subsample_common_stereotypes: False
+  dev_size: -1
+  additional_test:
+    - test-implHate
 train_config:
   train_steps: 20
   grad_accumulation_steps: 4
   lr: 1e-4
-  eval_every: 5
+  eval_every: 10
 generate_config:
-  do_sample: True
-  temperature: 0.4
+  do_sample: False

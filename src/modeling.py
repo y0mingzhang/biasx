@@ -3,7 +3,12 @@ import pandas as pd
 from os.path import join
 from typing import Optional
 from omegaconf import DictConfig
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, Adafactor
+from transformers import (
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    Adafactor,
+    AutoModelForSequenceClassification,
+)
 from tqdm.auto import tqdm
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -24,6 +29,17 @@ def initialize_model_and_tokenizer(
     new_tokens = set(ADDED_TOKENS) - set(tokenizer.get_vocab().keys())
     tokenizer.add_tokens(sorted(new_tokens))
     model.resize_token_embeddings(len(tokenizer))
+
+    return model, tokenizer
+
+
+def initialize_entailment_classifier_and_tokenizer(
+    conf: DictConfig,
+) -> tuple[AutoModelForSequenceClassification, AutoTokenizer]:
+    model = AutoModelForSequenceClassification.from_pretrained(
+        conf.model_name, num_labels=2
+    )
+    tokenizer = AutoTokenizer.from_pretrained(conf.model_name, use_fast=True)
 
     return model, tokenizer
 
@@ -115,10 +131,12 @@ def evaluate(
     device = get_device()
     model.to(device)
 
-    generated = []
+    if not eval_prefix:
+        eval_prefix = eval_mode
 
+    generated = []
     with torch.no_grad():
-        for batch in tqdm(eval_dl, desc=f"running {eval_mode}..."):
+        for batch in tqdm(eval_dl, desc=f"running {eval_prefix}..."):
             batch = to_device(batch, device)
             outputs = model.generate(
                 batch["input_ids"],
@@ -134,9 +152,15 @@ def evaluate(
     eval_df = pd.concat(
         (eval_df, eval_df["generation"].apply(extract_fields_from_generation)), axis=1
     )
-    filename = f"dev-{step}-df.jsonl" if eval_mode == "dev" else "test-df.jsonl"
+    filename = (
+        f"dev-{step}-df.jsonl" if eval_mode == "dev" else f"{eval_prefix}-df.jsonl"
+    )
     eval_df.to_json(join(conf.output_dir, filename), lines=True, orient="records")
 
     eval_metrics = get_metrics(eval_df)
-    filename = f"dev-{step}-metrics.json" if eval_mode == "dev" else "test-metrics.json"
+    filename = (
+        f"dev-{step}-metrics.json"
+        if eval_mode == "dev"
+        else f"{eval_prefix}-metrics.json"
+    )
     eval_metrics.to_json(join(conf.output_dir, filename))
