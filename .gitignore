@@ -164,3 +164,4 @@ cython_debug/
 data/
 outputs/
 slurm*
+data.tar.gz

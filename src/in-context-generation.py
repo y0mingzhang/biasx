@@ -44,7 +44,7 @@ def main():
     with open(join(conf.output_dir, "config.yaml"), "w") as f:
         OmegaConf.save(config=conf, f=f)
 
-    dataframes = prepare_dataframes(conf.data_config)
+    dataframes = prepare_dataframes(conf.data_config, splits=["train", "dev", "test"])
 
     # sample from training set
     train_samples_per_class = conf.get("train_samples", 8)
