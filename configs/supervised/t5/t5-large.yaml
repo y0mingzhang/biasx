@@ -1,8 +1,8 @@
-output_dir: outputs/supervised/t5-v1_1/large
-model_name: google/t5-v1_1-large
+output_dir: outputs/supervised/SBIC+implHate-balanced/t5
+model_name: t5-large
 data_config:
   subsample_common_stereotypes: True
-  data_dir: data/SBIC+implHate
+  data_dir: data/SBIC+implHate-balanced
   batch_size: 8
   additional_test:
     - test-implHate

@@ -1,0 +1,14 @@
+output_dir: outputs/supervised/SBIC+implHate-balanced/t5-3b-large-lr
+model_name: t5-3b
+data_config:
+  subsample_common_stereotypes: True
+  data_dir: data/SBIC+implHate-balanced
+  batch_size: 2
+  additional_test:
+    - test-implHate
+train_config:
+  optimizer: adafactor
+  train_steps: 8000
+  grad_accumulation_steps: 32
+  lr: 1e-4
+  eval_every: 800

@@ -13,5 +13,5 @@
 
 set -Eeuo pipefail
 
-python src/main.py "$@"
+python src/supervised-generation.py "$@"
 echo "Job finished!"
