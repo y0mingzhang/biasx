@@ -1,11 +1,10 @@
-output_dir: outputs/supervised/SBIC+implHate-balanced/t5-small-lr
+output_dir: outputs/supervised/implHate/t5-small-lr
 model_name: t5-large
 data_config:
   subsample_common_stereotypes: True
-  data_dir: data/SBIC+implHate-balanced
+  data_dir: data/implHate
   batch_size: 8
-  additional_test:
-    - test-implHate
+
 train_config:
   train_steps: 4000
   grad_accumulation_steps: 2
