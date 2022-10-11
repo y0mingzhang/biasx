@@ -31,7 +31,7 @@ def main():
         dataloaders["dev"],
     )
     evaluate(conf, model, tokenizer, "test", dataframes["test"], dataloaders["test"])
-    for split in conf["data_config"]["additional_test"]:
+    for split in conf["data_config"].get("additional_test", []):
         evaluate(
             conf,
             model,

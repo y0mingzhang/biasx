@@ -49,7 +49,7 @@ def load_best_model(
     ckpt_dir = join(output_dir, "ckpt")
     metric_to_step = {}
     for metric_file in glob.glob(join(output_dir, "dev*metrics.json")):
-        step = int(metric_file.split("-")[1])
+        step = int(basename(metric_file).split("-")[1])
         try:
             with open(metric_file) as f:
                 metrics = json.load(f)
