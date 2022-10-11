@@ -57,10 +57,12 @@ def process_example(example: dict) -> dict:
         target = NON_OFFENSIVE_TOKEN
     return {"text": example["post"], "target": target}
 
+
 def tokenize_func(tokenizer: AutoTokenizer, example: dict) -> dict:
     tokenized = tokenizer(example["text"])
     tokenized["labels"] = tokenizer(example["target"]).input_ids
     return tokenized
+
 
 def tokenize_entailment_func(tokenizer: AutoTokenizer, example: dict) -> dict:
     tokenized = tokenizer(example["post"], example["targetStereotype"])
@@ -157,7 +159,7 @@ def prepare_data(
     data_conf: DictConfig, tokenizer: AutoTokenizer
 ) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
     disable_progress_bar()  # datasets progbars kind of annoying
-    splits = ["train", "dev", "test"] + list(data_conf["additional_test"])
+    splits = ["train", "dev", "test"] + list(data_conf.get("additional_test"), [])
     dataframes = prepare_dataframes(data_conf, splits)
     dataset_raw = DatasetDict(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
@@ -279,7 +281,9 @@ def prepare_data_entailment_classifier(
     )
 
     tokenize_example = functools.partial(tokenize_entailment_func, tokenizer)
-    dataset = dataset_raw.map(tokenize_example, num_proc=num_workers(), desc="tokenizing..")
+    dataset = dataset_raw.map(
+        tokenize_example, num_proc=num_workers(), desc="tokenizing.."
+    )
     dataset_torch = dataset.with_format(
         "torch", columns=["input_ids", "attention_mask", "labels"]
     )

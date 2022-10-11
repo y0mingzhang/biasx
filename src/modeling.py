@@ -152,7 +152,8 @@ def evaluate(
 
         eval_df["generation"] = generated
         eval_df = pd.concat(
-            (eval_df, eval_df["generation"].apply(extract_fields_from_generation)), axis=1
+            (eval_df, eval_df["generation"].apply(extract_fields_from_generation)),
+            axis=1,
         )
         eval_metrics = get_metrics(eval_df)
     elif mode == "entailment":
@@ -167,7 +168,7 @@ def evaluate(
         eval_metrics = get_entailment_metrics(eval_df)
     else:
         raise Exception(f"unrecognized mode {mode}")
-    
+
     filename = (
         f"dev-{step}-df.jsonl" if eval_mode == "dev" else f"{eval_prefix}-df.jsonl"
     )
