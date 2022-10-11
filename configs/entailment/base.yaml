@@ -1,0 +1,4 @@
+mode: entailment
+eval_config:
+  monitor: entailment-F1
+  maximize: True

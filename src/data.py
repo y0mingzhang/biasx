@@ -5,7 +5,7 @@ from typing import Any, Literal, Union
 import pandas as pd
 from os.path import join
 from omegaconf import DictConfig
-from transformers import AutoTokenizer, DataCollatorForSeq2Seq
+from transformers import AutoTokenizer, DataCollatorForSeq2Seq, DataCollatorWithPadding
 from datasets import Dataset, DatasetDict
 from datasets.utils.logging import disable_progress_bar
 from torch.utils.data import DataLoader
@@ -57,10 +57,14 @@ def process_example(example: dict) -> dict:
         target = NON_OFFENSIVE_TOKEN
     return {"text": example["post"], "target": target}
 
-
 def tokenize_func(tokenizer: AutoTokenizer, example: dict) -> dict:
     tokenized = tokenizer(example["text"])
     tokenized["labels"] = tokenizer(example["target"]).input_ids
+    return tokenized
+
+def tokenize_entailment_func(tokenizer: AutoTokenizer, example: dict) -> dict:
+    tokenized = tokenizer(example["post"], example["targetStereotype"])
+    tokenized["labels"] = example["entailment_label"]
     return tokenized
 
 
@@ -191,7 +195,6 @@ def prepare_dataframes_entailment_classifier(
     splits = ["train", "dev", "test"]
     dataframes = {}
 
-    # for each post, get all reference groups/stereotypes for BLEU/ROUGE/WMD evaluation
     for split in splits:
         df = filter_dataframe(
             pd.read_csv(join(data_conf.data_dir, f"{split}.csv"))
@@ -207,7 +210,7 @@ def prepare_dataframes_entailment_classifier(
         df = df[included]
 
         positive = df.dropna(subset=("targetMinority", "targetStereotype")).copy()
-        positive["entailment"] = 1
+        positive["entailment_label"] = 1
 
         group_to_stereotype = defaultdict(list)
         for group, stereotype in zip(
@@ -275,16 +278,14 @@ def prepare_data_entailment_classifier(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
     )
 
-    tokenize_example = functools.partial(tokenize_func, tokenizer)
-    dataset = dataset_raw.map(
-        process_example, num_proc=num_workers(), desc="processing.."
-    ).map(tokenize_example, num_proc=num_workers(), desc="tokenizing..")
+    tokenize_example = functools.partial(tokenize_entailment_func, tokenizer)
+    dataset = dataset_raw.map(tokenize_example, num_proc=num_workers(), desc="tokenizing..")
     dataset_torch = dataset.with_format(
         "torch", columns=["input_ids", "attention_mask", "labels"]
     )
 
     # this collator pads batches to the same lengths on the fly
-    collator = DataCollatorForSeq2Seq(tokenizer, padding=True)
+    collator = DataCollatorWithPadding(tokenizer, padding=True)
 
     dataloaders = {
         split: DataLoader(

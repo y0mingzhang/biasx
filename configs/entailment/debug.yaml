@@ -1,0 +1,11 @@
+output_dir: outputs/entailment/debug
+model_name: bert-base-uncased
+data_config:
+  data_dir: data/SBIC.v2-min
+  batch_size: 16
+train_config:
+  optimizer: adamw
+  train_steps: 40
+  grad_accumulation_steps: 4
+  lr: 2e-4
+  eval_every: 20

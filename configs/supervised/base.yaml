@@ -1,4 +1,5 @@
 # base config (defines defaults for experiment config)
+mode: generation
 output_dir: outputs/supervised/debug
 model_name: t5-small
 data_config:

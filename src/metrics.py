@@ -72,3 +72,15 @@ def get_metrics(eval_df: pd.DataFrame) -> pd.Series:
             ),
         }
     )
+
+
+def get_entailment_metrics(eval_df: pd.DataFrame) -> pd.Series:
+    # typical metrics for classification & generation performance
+    labels = eval_df["entailment_label"].astype(int)
+    preds = eval_df["entailment_pred"].astype(int)
+    return pd.Series(
+        {
+            "entailment-accuracy": (labels == preds).mean(),
+            "entailment-F1": f1_score(labels, preds),
+        }
+    )

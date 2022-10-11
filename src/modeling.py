@@ -14,7 +14,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from data import ADDED_TOKENS, SPLIT, extract_fields_from_generation
 from utils import get_device, to_device, load_last_model, load_best_model, save_model
-from metrics import get_metrics
+from metrics import get_entailment_metrics, get_metrics
 
 
 def initialize_model_and_tokenizer(
@@ -39,7 +39,7 @@ def initialize_entailment_classifier_and_tokenizer(
     model = AutoModelForSequenceClassification.from_pretrained(
         conf.model_name, num_labels=2
     )
-    tokenizer = AutoTokenizer.from_pretrained(conf.model_name, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(conf.model_name, use_fast=False)
 
     return model, tokenizer
 
@@ -114,8 +114,8 @@ def evaluate(
     eval_prefix: Optional[str] = None,
 ):
 
+    mode = conf.mode
     eval_config = conf.eval_config
-    generate_config = conf.generate_config
     if eval_mode == "test":
         try:
             model = load_best_model(
@@ -134,30 +134,45 @@ def evaluate(
     if not eval_prefix:
         eval_prefix = eval_mode
 
-    generated = []
-    with torch.no_grad():
-        for batch in tqdm(eval_dl, desc=f"running {eval_prefix}..."):
-            batch = to_device(batch, device)
-            outputs = model.generate(
-                batch["input_ids"],
-                attention_mask=batch["attention_mask"],
-                max_new_tokens=128,
-                **generate_config,
-            )
+    if mode == "generation":
+        generate_config = conf.generate_config
+        generated = []
+        with torch.no_grad():
+            for batch in tqdm(eval_dl, desc=f"running {eval_prefix}..."):
+                batch = to_device(batch, device)
+                outputs = model.generate(
+                    batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    max_new_tokens=128,
+                    **generate_config,
+                )
 
-            decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-            generated.extend(decoded)
+                decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                generated.extend(decoded)
 
-    eval_df["generation"] = generated
-    eval_df = pd.concat(
-        (eval_df, eval_df["generation"].apply(extract_fields_from_generation)), axis=1
-    )
+        eval_df["generation"] = generated
+        eval_df = pd.concat(
+            (eval_df, eval_df["generation"].apply(extract_fields_from_generation)), axis=1
+        )
+        eval_metrics = get_metrics(eval_df)
+    elif mode == "entailment":
+        all_preds = []
+        with torch.no_grad():
+            for batch in tqdm(eval_dl):
+                batch = to_device(batch, device)
+                output = model(**batch)
+                preds = output.logits.argmax(dim=1)
+                all_preds.extend(preds.tolist())
+        eval_df["entailment_pred"] = all_preds
+        eval_metrics = get_entailment_metrics(eval_df)
+    else:
+        raise Exception(f"unrecognized mode {mode}")
+    
     filename = (
         f"dev-{step}-df.jsonl" if eval_mode == "dev" else f"{eval_prefix}-df.jsonl"
     )
     eval_df.to_json(join(conf.output_dir, filename), lines=True, orient="records")
 
-    eval_metrics = get_metrics(eval_df)
     filename = (
         f"dev-{step}-metrics.json"
         if eval_mode == "dev"
