@@ -1,3 +1,4 @@
+class: jurassic
 output_dir: outputs/in-context/implHate/j1-jumbo-sample
 api_key_file: /home/yimingz0/.ai23_api_key
 train_samples: 16
