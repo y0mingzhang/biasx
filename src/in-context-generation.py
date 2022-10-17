@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 from openai_api_cache import Jurassic1APICache, OpenAIAPICache
 from tqdm.auto import tqdm
 
-from data import prepare_dataframes
+from data import NA_TOKEN, prepare_dataframes
 from metrics import get_metrics
 from utils import seed_everything
 
@@ -31,18 +31,27 @@ offensive:"""
 
 
 def extract_fields(completion: str) -> pd.Series:
-    fields = [f.strip() for f in completion.split("\n")]
-    assert fields[0] in ("yes", "no")
-    assert fields[1].startswith("group targeted: ")
-    assert fields[2].startswith("stereotype: ")
-
-    return pd.Series(
-        {
-            "offensivePrediction": 1 if fields[0] == "yes" else 0,
-            "generatedMinorityGroup": fields[1][16:],
-            "generatedStereotype": fields[2][12:],
-        }
-    )
+    try:
+        fields = [f.strip() for f in completion.split("\n")]
+        assert fields[0] in ("yes", "no")
+        assert fields[1].startswith("group targeted: ")
+        assert fields[2].startswith("stereotype: ")
+        return pd.Series(
+            {
+                "offensivePrediction": 1 if fields[0] == "yes" else 0,
+                "generatedMinorityGroup": fields[1][16:],
+                "generatedStereotype": fields[2][12:],
+            }
+        )
+    except Exception:
+        print("unable to extract from", completion)
+        return pd.Series(
+            {
+                "offensivePrediction": 1 if fields[0] == "yes" else 0,
+                "generatedMinorityGroup": NA_TOKEN,
+                "generatedStereotype": NA_TOKEN,
+            }
+        )
 
 
 def main():
