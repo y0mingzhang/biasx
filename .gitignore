@@ -166,3 +166,4 @@ outputs/
 slurm*
 data.tar.gz
 sweeps
+tmp.sh
