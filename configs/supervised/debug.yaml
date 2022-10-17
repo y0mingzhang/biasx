@@ -14,3 +14,6 @@ train_config:
   eval_every: 10
 generate_config:
   do_sample: False
+entailment_config:
+  output_dir: outputs/entailment/debug
+

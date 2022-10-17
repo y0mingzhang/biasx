@@ -1,14 +1,20 @@
-import functools, re, itertools, json, random
+import functools
+import itertools
+import json
+import random
+import re
 from collections import defaultdict
-import numpy as np
-from typing import Any, Literal, Union
-import pandas as pd
 from os.path import join
-from omegaconf import DictConfig
-from transformers import AutoTokenizer, DataCollatorForSeq2Seq, DataCollatorWithPadding
+from typing import Literal, Union
+
+import numpy as np
+import pandas as pd
 from datasets import Dataset, DatasetDict
 from datasets.utils.logging import disable_progress_bar
+from omegaconf import DictConfig
 from torch.utils.data import DataLoader
+from transformers import AutoTokenizer, DataCollatorForSeq2Seq, DataCollatorWithPadding
+
 from utils import num_workers
 
 # globals
@@ -159,7 +165,7 @@ def prepare_data(
     data_conf: DictConfig, tokenizer: AutoTokenizer
 ) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
     disable_progress_bar()  # datasets progbars kind of annoying
-    splits = ["train", "dev", "test"] + list(data_conf.get("additional_test"), [])
+    splits = ["train", "dev", "test"] + list(data_conf.get("additional_test", []))
     dataframes = prepare_dataframes(data_conf, splits)
     dataset_raw = DatasetDict(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
@@ -180,7 +186,7 @@ def prepare_data(
         split: DataLoader(
             dataset_torch[split],
             shuffle=(split == "train"),
-            batch_size=data_conf.batch_size,
+            batch_size=(data_conf.batch_size if split == "train" else 1),
             collate_fn=collator,
             pin_memory=True,
             num_workers=num_workers(),
@@ -306,7 +312,7 @@ def prepare_data_entailment_classifier(
     return dataframes, dataloaders
 
 
-def extract_fields_from_generation(generation: str) -> dict[str, Any]:
+def extract_fields_from_generation(generation: str) -> pd.Series:
     if generation.startswith(OFFENSIVE_TOKEN):
         try:
             # split on all control tokens, should have exactly 2 fields
@@ -321,7 +327,7 @@ def extract_fields_from_generation(generation: str) -> dict[str, Any]:
                 }
             )
 
-        except:
+        except Exception:
             print("failed to parse", generation)
             print("default to negative prediction")
     return pd.Series(

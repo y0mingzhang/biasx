@@ -1,15 +1,25 @@
-import sys, os
+import os
+import sys
 from os.path import join
+
 import pandas as pd
 from omegaconf import OmegaConf
+from openai_api_cache import Jurassic1APICache, OpenAIAPICache
 from tqdm.auto import tqdm
-from openai_api_cache import Jurassic1APICache
 
-from utils import seed_everything
 from data import prepare_dataframes
 from metrics import get_metrics
+from utils import seed_everything
 
-instruction = "Classify the offensiveness of the given post, and decide whether it implies a stereotype targeting some identity-related group."
+API = {
+    "jurassic": Jurassic1APICache,
+    "gpt-3": OpenAIAPICache,
+}
+
+instruction = (
+    "Classify the offensiveness of the given post, and decide whether"
+    " it implies a stereotype targeting some identity-related group."
+)
 
 prompt_format = """post: {post}
 offensive: {offensive}
@@ -87,20 +97,39 @@ def main():
     with open(join(conf.output_dir, "train-prompt.txt"), "w") as f:
         f.write(train_prompt)
 
-    jurassic = Jurassic1APICache(open(conf.api_key_file).read().strip())
+    api = API[conf["class"]](open(conf.api_key_file).read().strip())
+
+    if conf["class"] == "gpt-3":
+        generation_kwargs = {
+            "max_tokens": 50,
+            "stop": ("\n\n", "post:"),
+        }
+    elif conf["class"] == "jurassic":
+        generation_kwargs = {
+            "maxTokens": 50,
+            "stopSequences": ("\n\n", "post:"),
+        }
+    else:
+        raise Exception
 
     test_completions = []
     for _, row in tqdm(test_subset.iterrows()):
         test_item = test_prompt_format.format(post=row["post"])
         prompt = "\n\n".join(train_items + [test_item])
-        resp = jurassic.generate(
+        resp = api.generate(
             model=conf.generate_config.model,
             prompt=prompt,
-            maxTokens=50,
             temperature=conf.generate_config.get("temperature", 0.0),
-            stopSequences=("\n\n", "post:"),
+            **generation_kwargs
         )
-        completion = resp["completions"][0]["data"]["text"]
+
+        if conf["class"] == "gpt-3":
+            completion = resp["choices"][0]["text"]
+        elif conf["class"] == "jurassic":
+            completion = resp["completions"][0]["data"]["text"]
+        else:
+            raise Exception
+
         test_completions.append(completion)
 
     test_subset["generation"] = test_completions

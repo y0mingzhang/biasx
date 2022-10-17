@@ -1,6 +1,6 @@
-class: jurassic
-output_dir: outputs/in-context/implHate/j1-grande-sample
-api_key_file: /home/yimingz0/.ai23_api_key
+class: gpt-3
+output_dir: outputs/in-context/implHate/davinci-greedy
+api_key_file: /home/yimingz0/.openai_api_key
 train_samples: 16
 train_seed: 43
 test_samples: 100
@@ -9,6 +9,5 @@ data_config:
   data_dir: data/implHate
   subsample_common_stereotypes: True
 generate_config:
-
-  model: j1-grande
-  temperature: 0.3
+  model: text-davinci-002
+  temperature: 0.0
