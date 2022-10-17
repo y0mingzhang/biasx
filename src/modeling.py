@@ -1,20 +1,29 @@
-import torch
-import pandas as pd
 from os.path import join
 from typing import Optional
-from omegaconf import DictConfig
-from transformers import (
-    AutoModelForSeq2SeqLM,
-    AutoTokenizer,
-    Adafactor,
-    AutoModelForSequenceClassification,
-)
-from tqdm.auto import tqdm
+
+import pandas as pd
+import torch
+from omegaconf import DictConfig, OmegaConf
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
-from data import ADDED_TOKENS, SPLIT, extract_fields_from_generation
-from utils import get_device, to_device, load_last_model, load_best_model, save_model
+from tqdm.auto import tqdm
+from transformers import (
+    Adafactor,
+    AutoModelForSeq2SeqLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    NoBadWordsLogitsProcessor,
+)
+
+from data import (
+    ADDED_TOKENS,
+    NA_TOKEN,
+    NON_OFFENSIVE_TOKEN,
+    SPLIT,
+    extract_fields_from_generation,
+)
 from metrics import get_entailment_metrics, get_metrics
+from utils import get_device, load_best_model, load_last_model, save_model, to_device
 
 
 def initialize_model_and_tokenizer(
@@ -41,6 +50,19 @@ def initialize_entailment_classifier_and_tokenizer(
     )
     tokenizer = AutoTokenizer.from_pretrained(conf.model_name, use_fast=False)
 
+    return model, tokenizer
+
+
+def load_entail_model(
+    entail_config: DictConfig,
+) -> tuple[AutoModelForSequenceClassification, AutoTokenizer]:
+    entail_dir = entail_config["output_dir"]
+    conf = OmegaConf.load(join(entail_dir, "config.yaml"))
+    model, tokenizer = initialize_entailment_classifier_and_tokenizer(conf)
+
+    model = load_best_model(
+        conf.output_dir, model, conf.eval_config.monitor, conf.eval_config.maximize
+    )
     return model, tokenizer
 
 
@@ -78,7 +100,7 @@ def train(
         while step < train_conf.train_steps:
             try:
                 batch = next(train_iter)
-            except:
+            except StopIteration:
                 print("train_dataloader reset")
                 train_iter = iter(train_dl)
                 batch = next(train_iter)
@@ -131,6 +153,17 @@ def evaluate(
     device = get_device()
     model.to(device)
 
+    rank_with_entailment = "entailment_config" in conf and eval_mode == "test"
+    if rank_with_entailment:
+        entail_model, entail_tokenizer = load_entail_model(conf["entailment_config"])
+        candidate_banned = [
+            tokenizer(NON_OFFENSIVE_TOKEN, add_special_tokens=False).input_ids,
+            tokenizer(NA_TOKEN, add_special_tokens=False).input_ids,
+        ]
+        candidate_logits_proc = NoBadWordsLogitsProcessor(
+            candidate_banned, tokenizer.eos_token_id
+        )
+
     if not eval_prefix:
         eval_prefix = eval_mode
 
@@ -148,13 +181,49 @@ def evaluate(
                 )
 
                 decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+                if rank_with_entailment:
+                    extracted = extract_fields_from_generation(decoded[0])
+                    if extracted["generatedStereotype"] != NA_TOKEN:
+                        outputs = model.generate(
+                            batch["input_ids"],
+                            attention_mask=batch["attention_mask"],
+                            max_new_tokens=128,
+                            do_sample=True,
+                            num_return_sequences=10,
+                            logits_processor=[candidate_logits_proc],
+                        )
+                        candidates = decoded + tokenizer.batch_decode(
+                            outputs, skip_special_tokens=True
+                        )
+                        candidate_stereotypes = [
+                            extract_fields_from_generation(candidate)[
+                                "generatedStereotype"
+                            ]
+                            for candidate in candidates
+                        ]
+                        candidate_batch = entail_tokenizer(
+                            tokenizer.batch_decode(
+                                batch["input_ids"], skip_special_tokens=True
+                            )
+                            * len(candidate_stereotypes),
+                            candidate_stereotypes,
+                            return_tensors="pt",
+                            padding="longest",
+                        )
+                        candidate_outputs = entail_model(**candidate_batch)
+                        candidate_goodness = candidate_outputs.logits.softmax(1)[:, 1]
+                        decoded = [candidates[candidate_goodness.argmax().item()]]
+
                 generated.extend(decoded)
 
         eval_df["generation"] = generated
         eval_df = pd.concat(
-            (eval_df, eval_df["generation"].apply(extract_fields_from_generation)), axis=1
+            (eval_df, eval_df["generation"].apply(extract_fields_from_generation)),
+            axis=1,
         )
         eval_metrics = get_metrics(eval_df)
+
     elif mode == "entailment":
         all_preds = []
         with torch.no_grad():
@@ -167,7 +236,7 @@ def evaluate(
         eval_metrics = get_entailment_metrics(eval_df)
     else:
         raise Exception(f"unrecognized mode {mode}")
-    
+
     filename = (
         f"dev-{step}-df.jsonl" if eval_mode == "dev" else f"{eval_prefix}-df.jsonl"
     )

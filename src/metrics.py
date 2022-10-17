@@ -1,7 +1,8 @@
-import torchmetrics
-from torchmetrics.text.rouge import ROUGEScore
 import pandas as pd
+import torchmetrics
 from sklearn.metrics import f1_score
+from torchmetrics.text.rouge import ROUGEScore
+
 from data import NA_TOKEN
 
 METRICS = [

@@ -1,10 +1,12 @@
-import sys, os
+import os
+import sys
 from os.path import join
+
 from omegaconf import OmegaConf
 
-from utils import seed_everything
-from modeling import initialize_model_and_tokenizer, train, evaluate
 from data import prepare_data
+from modeling import evaluate, initialize_model_and_tokenizer, train
+from utils import seed_everything
 
 
 def main():

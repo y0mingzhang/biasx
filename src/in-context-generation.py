@@ -1,20 +1,25 @@
-import sys, os
+import os
+import sys
 from os.path import join
+
 import pandas as pd
 from omegaconf import OmegaConf
-from tqdm.auto import tqdm
 from openai_api_cache import Jurassic1APICache, OpenAIAPICache
+from tqdm.auto import tqdm
 
-from utils import seed_everything
 from data import prepare_dataframes
 from metrics import get_metrics
+from utils import seed_everything
 
 API = {
     "jurassic": Jurassic1APICache,
     "gpt-3": OpenAIAPICache,
 }
 
-instruction = "Classify the offensiveness of the given post, and decide whether it implies a stereotype targeting some identity-related group."
+instruction = (
+    "Classify the offensiveness of the given post, and decide whether"
+    " it implies a stereotype targeting some identity-related group."
+)
 
 prompt_format = """post: {post}
 offensive: {offensive}
@@ -38,6 +43,7 @@ def extract_fields(completion: str) -> pd.Series:
             "generatedStereotype": fields[2][12:],
         }
     )
+
 
 def main():
     seed_everything(42)
@@ -116,14 +122,14 @@ def main():
             temperature=conf.generate_config.get("temperature", 0.0),
             **generation_kwargs
         )
-        
+
         if conf["class"] == "gpt-3":
             completion = resp["choices"][0]["text"]
         elif conf["class"] == "jurassic":
             completion = resp["completions"][0]["data"]["text"]
         else:
             raise Exception
-        
+
         test_completions.append(completion)
 
     test_subset["generation"] = test_completions

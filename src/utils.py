@@ -1,6 +1,11 @@
-import random, torch, os, glob, json
+import glob
+import json
+import os
+import random
+from os.path import basename, join
+
 import numpy as np
-from os.path import join, basename
+import torch
 
 
 def seed_everything(seed: int) -> None:
@@ -54,7 +59,7 @@ def load_best_model(
             with open(metric_file) as f:
                 metrics = json.load(f)
                 metric_to_step[metrics[metric]] = step
-        except:
+        except Exception:
             pass
 
     comparator = max if maximize else min
