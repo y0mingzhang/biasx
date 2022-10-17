@@ -165,4 +165,5 @@ data/
 outputs/
 slurm*
 data.tar.gz
-sweeps
+sweeps/*
+!sweeps/*.py
