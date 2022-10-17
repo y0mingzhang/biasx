@@ -159,7 +159,7 @@ def prepare_data(
     data_conf: DictConfig, tokenizer: AutoTokenizer
 ) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
     disable_progress_bar()  # datasets progbars kind of annoying
-    splits = ["train", "dev", "test"] + list(data_conf.get("additional_test"), [])
+    splits = ["train", "dev", "test"] + list(data_conf.get("additional_test", []))
     dataframes = prepare_dataframes(data_conf, splits)
     dataset_raw = DatasetDict(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
