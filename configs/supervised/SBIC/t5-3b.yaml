@@ -1,0 +1,15 @@
+output_dir: outputs/supervised/SBIC/t5-3b
+model_name: t5-3b
+data_config:
+  batch_size: 2
+  subsample_common_stereotypes: True
+  dev_size: 1000
+  data_dir: data/SBIC.v2
+  additional_test:
+    - test-implHate
+train_config:
+  optimizer: adafactor
+  train_steps: 8000
+  grad_accumulation_steps: 16
+  lr: 2e-4
+  eval_every: 800
