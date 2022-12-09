@@ -4,14 +4,15 @@ from os.path import join
 
 from omegaconf import OmegaConf
 
-from data import prepare_data
-from modeling import evaluate, initialize_model_and_tokenizer, train
+from data import prepare_data_classifier
+from classify.modeling import *
 from utils import seed_everything
+
 
 
 def main():
     seed_everything(42)
-    base_conf = OmegaConf.load("configs/supervised/base.yaml")
+    base_conf = OmegaConf.load("configs/classify/base.yaml")
     conf = OmegaConf.merge(base_conf, OmegaConf.load(sys.argv[1]))
 
     # dump config to output_dir
@@ -20,7 +21,8 @@ def main():
         OmegaConf.save(config=conf, f=f)
 
     model, tokenizer = initialize_model_and_tokenizer(conf)
-    dataframes, dataloaders = prepare_data(conf.data_config, tokenizer)
+
+    dataframes, dataloaders = prepare_data_classifier(conf.data_config, tokenizer)
 
     # run training and evaluation on SBIC
     train(

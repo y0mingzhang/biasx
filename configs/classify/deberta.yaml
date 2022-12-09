@@ -1,0 +1,12 @@
+mode: entailment
+output_dir: outputs/classify/SBIC/deberta
+model_name: microsoft/deberta-v3-large
+data_config:
+  data_dir: data/SBIC.v2
+  batch_size: 16
+train_config:
+  optimizer: adamw
+  train_steps: 4000
+  grad_accumulation_steps: 1
+  lr: 1.0e-05
+  eval_every: 800

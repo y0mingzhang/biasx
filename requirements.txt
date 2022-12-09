@@ -1,0 +1,11 @@
+pandas
+torchmetrics
+sklearn
+omegaconf
+tqdm
+transformers
+torch
+google-api-python-client
+datasets
+git+https://github.com/Y0mingZhang/openai-api-cache.git
+protobuf==3.20.1

@@ -70,6 +70,13 @@ def tokenize_func(tokenizer: AutoTokenizer, example: dict) -> dict:
     return tokenized
 
 
+def tokenize_classification_func(tokenizer: AutoTokenizer, example: dict) -> dict:
+    assert example["offensiveYN"] in (0.0, 1.0)
+    tokenized = tokenizer(example["post"])
+    tokenized["labels"] = int(example["offensiveYN"])
+    return tokenized
+
+
 def tokenize_entailment_func(tokenizer: AutoTokenizer, example: dict) -> dict:
     tokenized = tokenizer(example["post"], example["targetStereotype"])
     tokenized["labels"] = example["entailment_label"]
@@ -135,7 +142,7 @@ def prepare_dataframes(
         ).drop_duplicates(subset=["post", "targetMinority", "targetStereotype"])
 
         if split == "train":
-            if data_conf.subsample_common_stereotypes:
+            if data_conf.get("subsample_common_stereotypes"):
                 stereotype_counts = df.value_counts("targetStereotype")
                 inclusion_probs = 1 / np.sqrt(
                     df["targetStereotype"].apply(
@@ -275,6 +282,38 @@ def prepare_dataframes_entailment_classifier(
 
     return dataframes
 
+def prepare_data_classifier(
+    data_conf: DictConfig, tokenizer: AutoTokenizer
+) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
+    disable_progress_bar()  # datasets progbars kind of annoying
+    splits = ["train", "dev", "test"] + list(data_conf.get("additional_test", []))
+    dataframes = prepare_dataframes(data_conf, splits)
+    dataset_raw = DatasetDict(
+        {split: Dataset.from_pandas(dataframes[split]) for split in splits}
+    )
+    
+    tokenize_example = functools.partial(tokenize_classification_func, tokenizer)
+    dataset = dataset_raw.map(tokenize_example, num_proc=num_workers(), desc="tokenizing..")
+    dataset_torch = dataset.with_format(
+        "torch", columns=["input_ids", "attention_mask", "labels"]
+    )
+
+    # this collator pads batches to the same lengths on the fly
+    collator = DataCollatorWithPadding(tokenizer, padding=True)
+
+    dataloaders = {
+        split: DataLoader(
+            dataset_torch[split],
+            shuffle=(split == "train"),
+            batch_size=data_conf.batch_size,
+            collate_fn=collator,
+            pin_memory=True,
+            num_workers=num_workers(),
+        )
+        for split in dataset_torch.keys()
+    }
+
+    return dataframes, dataloaders
 
 def prepare_data_entailment_classifier(
     data_conf: DictConfig, tokenizer: AutoTokenizer
