@@ -168,3 +168,5 @@ data.tar.gz
 sweeps/*
 !sweeps/*.py
 tmp.sh
+*debug*
+perspective-toxicity.py

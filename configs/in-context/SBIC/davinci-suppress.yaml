@@ -1,0 +1,16 @@
+class: gpt-3
+output_dir: outputs/in-context/SBIC/davinci-suppress
+api_key_file: /home/yimingz0/.openai_api_key
+train_samples: 16
+train_seed: 43
+test_samples: 500
+test_seed: 44
+data_config:
+  data_dir: data/SBIC.v2
+  subsample_common_stereotypes: True
+generate_config:
+  model: text-davinci-002
+  temperature: 0.3
+entailment_config:
+  mode: suppress
+  output_dir: outputs/entailment/SBIC/deberta
