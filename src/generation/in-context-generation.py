@@ -159,7 +159,7 @@ def main():
         raise Exception
 
     test_completions = []
-    for _, row in tqdm(test_subset.iterrows()):
+    for _, row in tqdm(test_subset.iterrows(), total=len(test_subset)):
         test_item = test_prompt_format.format(post=row["post"])
         prompt = "\n\n".join([train_prompt, test_item])
 

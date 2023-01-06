@@ -114,13 +114,18 @@ def evaluate(
         eval_prefix = eval_mode
 
     all_preds = []
+    positive_probs = []
+
     with torch.no_grad():
         for batch in tqdm(eval_dl):
             batch = to_device(batch, device)
             output = model(**batch)
             preds = output.logits.argmax(dim=1)
             all_preds.extend(preds.tolist())
+            positive_probs.extend(output.logits.softmax(1)[:, 1].tolist())
+    
     eval_df["offensivePrediction"] = all_preds
+    eval_df["offensiveProbability"] = positive_probs
     eval_metrics = get_classification_metrics(eval_df)
 
 

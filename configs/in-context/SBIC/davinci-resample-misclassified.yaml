@@ -1,0 +1,16 @@
+class: gpt-3
+output_dir: outputs/in-context/SBIC/davinci-resample-misclassified
+api_key_file: /home/yimingz0/.openai_api_key
+train_samples: 16
+train_seed: 43
+test_file: data/SBIC-special-sets/misclassified.jsonl
+data_config:
+  data_dir: data/SBIC.v2
+  subsample_common_stereotypes: True
+generate_config:
+  model: text-davinci-002
+  temperature: 0.5
+entailment_config:
+  mode: resample
+  threshold: 0.5
+  output_dir: outputs/entailment/SBIC/deberta
