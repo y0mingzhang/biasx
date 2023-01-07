@@ -1,12 +1,8 @@
 class: gpt-3
-output_dir: outputs/in-context/SBIC/davinci-manual
+output_dir: outputs/in-context-manual/SBIC/davinci-sample
 api_key_file: /home/yimingz0/.openai_api_key
 manual_prompt: configs/in-context/SBIC/manual-prompt.txt
-test_samples: 500
-test_seed: 44
-data_config:
-  data_dir: data/SBIC.v2
-  subsample_common_stereotypes: True
+test_file: data/SBIC-special-sets/selected-0106.jsonl
 generate_config:
   model: text-davinci-002
   temperature: 0.3

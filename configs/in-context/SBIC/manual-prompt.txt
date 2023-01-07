@@ -1,36 +1,31 @@
-Classify the offensiveness of the given post, and decide whether it implies a stereotype targeting some identity-related group.
+Classify the offensiveness of the given statement and give a reason for the decision.
 
-post: Whereas Breitbart and Bannon are now falling for the media's gotcha games, the much more savvy Tucker Carlson refuses to play the "I disavow" game and sticks to his principles.
-offensive: no
-group targeted: None
-stereotype: None
-
-
-post: Why is the iPhone X cheaper in asia? They had security failures with the facial regonition
+statement: So as a woman, you're really not into men? Like, really really not into men? Are you sure?
 offensive: yes
-group targeted: Asian folks
-stereotype: Asian folks all look the same and are indistinguishable by facial recognition systems
+targeted group: lesbian women
+reason: Implies a stereotype that lesbians are just confused about their sexuality.
 
-
-post: The amount of kind words and support we've received from all of you has been immense. Thank you all so very much.
+statement: I'm bout to make a list of stupid ass fake ass people in the community.
 offensive: no
-group targeted: None
-stereotype: None
+targeted group: None
+reason: Expresses anger towards certain people who are not minorities.
 
-
-post: What do you call winning battle royale in China? Winner Winner Dog dinner
-offensive: yes
-group targeted: Chinese people
-stereotype: Chinese people eat dogs and that makes them gross
-
-
-post: A priests asks the convicted murderer at the electric chair, "Do you have any last requests?” - "Yes," replies the murderer. "Can you please hold my hand?"
+statement: Has anyone created a new sub for the refugees of this sub yet?
 offensive: no
-group targeted: None
-stereotype: None
+targeted group: None
+reason: None
 
-
-post: How fast can a Jew run How ever fast the wind blows
+statement: What is the difference between a nigger and an ape? The ape doesn’t get hit with a whip.
 offensive: yes
-group targeted: Jewish people
-stereotype: Jewish people were killed and burned to ashes during the holocaust
+targeted group: black people
+reason: Implies a stereotype that black people are more like apes than humans.
+
+statement: Al Jazeera are making their own version of the Jeremy Kyle show They'll discuss scandals such as monogamy and consensual adult relationships
+offensive: yes
+targeted group: muslims
+reason: Implies a stereotype that muslims have harems and are rapists.
+
+statement: What’s the difference between my dad and cancer? My cancer came back.
+offensive: no
+targeted group: None
+reason: Makes a joke about a difficult personal situation.
