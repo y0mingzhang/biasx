@@ -1,13 +1,10 @@
 import os
 import sys
-from os.path import join
-
-from omegaconf import OmegaConf
-
+from classify.modeling import evaluate, initialize_model_and_tokenizer, train
 from data import prepare_data_classifier
-from classify.modeling import *
+from omegaconf import OmegaConf
+from os.path import join
 from utils import seed_everything
-
 
 
 def main():

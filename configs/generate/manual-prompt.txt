@@ -1,0 +1,31 @@
+Classify the offensiveness of the given statement and give a reason for the decision.
+
+statement: So as a woman, you're really not into men? Like, really really not into men? Are you sure?
+offensive: yes
+targeted group: lesbian women
+reason: Implies a stereotype that lesbians are just confused about their sexuality.
+
+statement: I'm bout to make a list of stupid ass fake ass people in the community.
+offensive: no
+targeted group: None
+reason: Expresses anger towards certain people who are not minorities.
+
+statement: Has anyone created a new sub for the refugees of this sub yet?
+offensive: no
+targeted group: None
+reason: None
+
+statement: What is the difference between a nigger and an ape? The ape doesn’t get hit with a whip.
+offensive: yes
+targeted group: black people
+reason: Implies a stereotype that black people are more like apes than humans.
+
+statement: Al Jazeera are making their own version of the Jeremy Kyle show They'll discuss scandals such as monogamy and consensual adult relationships
+offensive: yes
+targeted group: muslims
+reason: Implies a stereotype that muslims have harems and are rapists.
+
+statement: What’s the difference between my dad and cancer? My cancer came back.
+offensive: no
+targeted group: None
+reason: Makes a joke about a difficult personal situation.

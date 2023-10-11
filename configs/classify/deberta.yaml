@@ -1,7 +1,6 @@
 eval_config:
   monitor: offensive-F1
   maximize: true
-mode: entailment
 output_dir: outputs/classify/SBIC/deberta
 model_name: microsoft/deberta-v3-large
 data_config:

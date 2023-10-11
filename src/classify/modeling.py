@@ -1,25 +1,14 @@
-from os.path import join
-from typing import Optional
-
 import pandas as pd
 import torch
-from omegaconf import DictConfig, OmegaConf
+from data import SPLIT
+from metrics import get_classification_metrics
+from omegaconf import DictConfig
+from os.path import join
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from transformers import (
-    AutoTokenizer,
-    AutoModelForSequenceClassification,
-)
-
-from data import (
-    ADDED_TOKENS,
-    NA_TOKEN,
-    NON_OFFENSIVE_TOKEN,
-    SPLIT,
-    extract_fields_from_generation,
-)
-from metrics import get_classification_metrics
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from typing import Optional
 from utils import get_device, load_best_model, load_last_model, save_model, to_device
 
 
@@ -30,6 +19,7 @@ def initialize_model_and_tokenizer(
     tokenizer = AutoTokenizer.from_pretrained(conf.model_name)
 
     return model, tokenizer
+
 
 def train(
     conf: DictConfig,
@@ -93,7 +83,6 @@ def evaluate(
     step: Optional[int] = -1,
     eval_prefix: Optional[str] = None,
 ):
-
     eval_config = conf.eval_config
     if eval_mode == "test":
         try:
@@ -123,11 +112,10 @@ def evaluate(
             preds = output.logits.argmax(dim=1)
             all_preds.extend(preds.tolist())
             positive_probs.extend(output.logits.softmax(1)[:, 1].tolist())
-    
+
     eval_df["offensivePrediction"] = all_preds
     eval_df["offensiveProbability"] = positive_probs
     eval_metrics = get_classification_metrics(eval_df)
-
 
     filename = (
         f"dev-{step}-df.jsonl" if eval_mode == "dev" else f"{eval_prefix}-df.jsonl"

@@ -1,0 +1,8 @@
+class: gpt-3
+output_dir: outputs/generate/text-davinci-003
+api_key_file: /home/yimingz3/secrets/openai-api-key
+manual_prompt: configs/in-context/SBIC/manual-prompt.txt
+test_file: data/selected.jsonl
+generate_config:
+  model: text-davinci-003
+  temperature: 0.3

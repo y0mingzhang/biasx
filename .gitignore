@@ -161,7 +161,8 @@ cython_debug/
 
 # YZ
 .vscode
-data/
+data/*
+!data/selected.jsonl
 outputs/
 slurm*
 data.tar.gz
@@ -169,4 +170,3 @@ sweeps/*
 !sweeps/*.py
 tmp.sh
 *debug*
-perspective-toxicity.py

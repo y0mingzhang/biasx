@@ -1,20 +1,16 @@
 import functools
 import itertools
 import json
-import random
-import re
-from collections import defaultdict
-from os.path import join
-from typing import Literal, Union
-
 import numpy as np
 import pandas as pd
+import re
 from datasets import Dataset, DatasetDict
 from datasets.utils.logging import disable_progress_bar
 from omegaconf import DictConfig
+from os.path import join
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, DataCollatorForSeq2Seq, DataCollatorWithPadding
-
+from typing import Literal, Union
 from utils import num_workers
 
 # globals
@@ -74,12 +70,6 @@ def tokenize_classification_func(tokenizer: AutoTokenizer, example: dict) -> dic
     assert example["offensiveYN"] in (0.0, 1.0)
     tokenized = tokenizer(example["post"])
     tokenized["labels"] = int(example["offensiveYN"])
-    return tokenized
-
-
-def tokenize_entailment_func(tokenizer: AutoTokenizer, example: dict) -> dict:
-    tokenized = tokenizer(example["post"], example["targetStereotype"])
-    tokenized["labels"] = example["entailment_label"]
     return tokenized
 
 
@@ -204,84 +194,6 @@ def prepare_data(
     return dataframes, dataloaders
 
 
-def prepare_dataframes_entailment_classifier(
-    data_conf: DictConfig,
-) -> dict[SPLIT, pd.DataFrame]:
-    splits = ["train", "dev", "test"]
-    dataframes = {}
-
-    for split in splits:
-        df = filter_dataframe(
-            pd.read_csv(join(data_conf.data_dir, f"{split}.csv"))
-        ).drop_duplicates(subset=["post", "targetMinority", "targetStereotype"])
-
-        stereotype_counts = df.value_counts("targetStereotype")
-        inclusion_probs = 1 / np.sqrt(
-            df["targetStereotype"].apply(
-                lambda s: stereotype_counts[s] if s in stereotype_counts else 1
-            )
-        )
-        included = np.random.uniform(size=len(df)) <= inclusion_probs
-        df = df[included]
-
-        positive = df.dropna(subset=("targetMinority", "targetStereotype")).copy()
-        positive["entailment_label"] = 1
-
-        group_to_stereotype = defaultdict(list)
-        for group, stereotype in zip(
-            positive["targetMinority"], positive["targetStereotype"]
-        ):
-            group_to_stereotype[group].append(stereotype)
-
-        groups = sorted(group_to_stereotype.keys())
-        for g in group_to_stereotype:
-            group_to_stereotype[g] = sorted(set(group_to_stereotype[g]))
-
-        easy_negative = []
-        hard_negative = []
-
-        for _, row in positive.iterrows():
-
-            group = row["targetMinority"]
-            stereotype = row["targetStereotype"]
-            other_group = random.choice(groups)
-            other_group_stereotype = random.choice(group_to_stereotype[other_group])
-
-            row_easy_neg = row.copy()
-            row_easy_neg["targetMinority"] = other_group
-            row_easy_neg["targetStereotype"] = other_group_stereotype
-            row_easy_neg["entailment_label"] = 0
-            easy_negative.append(row_easy_neg)
-
-            if len(group_to_stereotype[group]) >= 5:
-                row_hard_neg = row.copy()
-                row_hard_neg["targetMinority"] = group
-                group_other_stereotype = random.choice(group_to_stereotype[group])
-                while group_other_stereotype == stereotype:
-                    group_other_stereotype = random.choice(group_to_stereotype[group])
-                row_hard_neg["targetStereotype"] = group_other_stereotype
-                row_hard_neg["entailment_label"] = 0
-                hard_negative.append(row_hard_neg)
-
-        easy_negative = pd.DataFrame(easy_negative)
-        hard_negative = pd.DataFrame(hard_negative)
-
-        dataset_size = min(
-            len(positive) * 2, len(easy_negative) * 4, len(hard_negative) * 4
-        )
-        df = pd.concat(
-            (
-                positive.sample(dataset_size // 4 * 2),
-                easy_negative.sample(dataset_size // 4),
-                hard_negative.sample(dataset_size // 4),
-            ),
-            ignore_index=True,
-        )
-
-        dataframes[split] = df
-
-    return dataframes
-
 def prepare_data_classifier(
     data_conf: DictConfig, tokenizer: AutoTokenizer
 ) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
@@ -291,41 +203,8 @@ def prepare_data_classifier(
     dataset_raw = DatasetDict(
         {split: Dataset.from_pandas(dataframes[split]) for split in splits}
     )
-    
+
     tokenize_example = functools.partial(tokenize_classification_func, tokenizer)
-    dataset = dataset_raw.map(tokenize_example, num_proc=num_workers(), desc="tokenizing..")
-    dataset_torch = dataset.with_format(
-        "torch", columns=["input_ids", "attention_mask", "labels"]
-    )
-
-    # this collator pads batches to the same lengths on the fly
-    collator = DataCollatorWithPadding(tokenizer, padding=True)
-
-    dataloaders = {
-        split: DataLoader(
-            dataset_torch[split],
-            shuffle=(split == "train"),
-            batch_size=data_conf.batch_size,
-            collate_fn=collator,
-            pin_memory=True,
-            num_workers=num_workers(),
-        )
-        for split in dataset_torch.keys()
-    }
-
-    return dataframes, dataloaders
-
-def prepare_data_entailment_classifier(
-    data_conf: DictConfig, tokenizer: AutoTokenizer
-) -> tuple[dict[SPLIT, pd.DataFrame], dict[SPLIT, DataLoader]]:
-    disable_progress_bar()  # datasets progbars kind of annoying
-    splits = ["train", "dev", "test"]
-    dataframes = prepare_dataframes_entailment_classifier(data_conf)
-    dataset_raw = DatasetDict(
-        {split: Dataset.from_pandas(dataframes[split]) for split in splits}
-    )
-
-    tokenize_example = functools.partial(tokenize_entailment_func, tokenizer)
     dataset = dataset_raw.map(
         tokenize_example, num_proc=num_workers(), desc="tokenizing.."
     )

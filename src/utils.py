@@ -1,11 +1,10 @@
 import glob
 import json
+import numpy as np
 import os
 import random
-from os.path import basename, join
-
-import numpy as np
 import torch
+from os.path import basename, join
 
 
 def seed_everything(seed: int) -> None:

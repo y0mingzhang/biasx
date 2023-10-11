@@ -1,11 +1,11 @@
 pandas
 torchmetrics
-sklearn
+scikit-learn
 omegaconf
 tqdm
 transformers
 torch
-google-api-python-client
 datasets
-git+https://github.com/Y0mingZhang/openai-api-cache.git
+sentencepiece
 protobuf==3.20.1
+openai

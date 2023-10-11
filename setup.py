@@ -23,10 +23,10 @@ def read_requirements(filename: str):
     return requirements
 
 setup(
-    name="sbf-modeling",
-    version="0.1",
+    name="biasx",
+    version="1.0.0",
     author="Yiming Zhang",
-    author_email="yimingz0@uchicago.edu",
+    author_email="yimingz3@cs.cmu.edu",
     packages=find_packages(
         where="src"
     ),

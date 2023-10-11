@@ -1,9 +1,8 @@
 import pandas as pd
 import torchmetrics
+from data import NA_TOKEN
 from sklearn.metrics import f1_score
 from torchmetrics.text.rouge import ROUGEScore
-
-from data import NA_TOKEN
 
 METRICS = [
     "offensive-accuracy",
@@ -75,22 +74,12 @@ def get_metrics(eval_df: pd.DataFrame) -> pd.Series:
     )
 
 
-def get_entailment_metrics(eval_df: pd.DataFrame) -> pd.Series:
-    labels = eval_df["entailment_label"].astype(int)
-    preds = eval_df["entailment_pred"].astype(int)
-    return pd.Series(
-        {
-            "entailment-accuracy": (labels == preds).mean(),
-            "entailment-F1": f1_score(labels, preds),
-        }
-    )
-
 def get_classification_metrics(eval_df: pd.DataFrame) -> pd.Series:
     labels = eval_df["offensiveYN"].astype(int)
     preds = eval_df["offensivePrediction"].astype(int)
     return pd.Series(
         {
             "offensive-accuracy": (labels == preds).mean(),
-            "offensive-F1": f1_score(labels, preds)
+            "offensive-F1": f1_score(labels, preds),
         }
     )
